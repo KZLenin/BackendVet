@@ -2,6 +2,7 @@
 import express, { request } from 'express'
 import dotenv from 'dotenv'
 import cors from 'cors'
+import routerVeterinarios from './routers/veterinario_routes.js'
 
 // Inicializaciones
 const app  = express()
@@ -18,5 +19,9 @@ app.use(express.json())
 app.get('/',(req,res)=>{
     res.send("Server on")
 })
+//Rutas para Veterinario
+app.use('/api',routerVeterinarios)
+//Rutas que no existen
+app.use((req,res)=>{res.status(404).send("Endpoint no encontrado")})
 
 export default app

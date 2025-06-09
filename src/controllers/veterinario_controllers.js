@@ -62,12 +62,30 @@ const crearNuevoPassword = async (req,res)=>{
     res.status(200).json({msg:"Felicitaciones, ya puedes iniciar sesión con tu nuevo password"}) 
 }
 
+const login = async(req,res) => { 
+    const {email, password} = req.body
 
+    if(Object.values(req.body).includes("")) return res.status(400).json({msg:"Lo senimos, debes llenar todos los campos"})
+    const veterinarioBDD = await veterinario.findOne({email}).select("-status -__v -token -updatedAt -createdAt")
+
+    if (veterinarioBDD?.confirmEmail === false) return res.status(403).json({msg:"Lo sentimos, debes confirmar tu cuenta antes de iniciar sesion"})
+
+    if (!veterinarioBDD) return res.status(404).json({msg: "Lo sentimos, el usuario no se encuentra registrado"})
+
+    const verificarPassword =  await veterinarioBDD.matchPassword(password)
+
+    if (!verificarPassword) return res.status(401).json({msg:"Lo sentimos, el password es incorrecto"})
+
+    const {nombre, apellido, direccion, celular, _id, rol} = veterinarioBDD
+
+    res.status(200).json({rol, nombre,apellido,direccion,celular,_id})
+ }
 
 export {
     registro,
     confirmarMail,
     recuperarPassword,
     comprobarTokenPasword,
-    crearNuevoPassword
+    crearNuevoPassword,
+    login
 }

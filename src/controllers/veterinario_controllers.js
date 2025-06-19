@@ -1,5 +1,6 @@
 import veterinario from "../models/veterinario.js"
 import { sendMailToRegister, sendMailToRecoveryPassword } from "../config/nodemailer.js"
+import { crearTokenJWT } from "../middleware/JWT.js"
 
 const registro = async (req,res) => {
   const {email, password} =req.body
@@ -78,8 +79,14 @@ const login = async(req,res) => {
 
     const {nombre, apellido, direccion, celular, _id, rol} = veterinarioBDD
 
-    res.status(200).json({rol, nombre,apellido,direccion,celular,_id})
+    const token = crearTokenJWT(veterinarioBDD._id,veterinarioBDD.rol)
+
+    res.status(200).json({token, rol, nombre,apellido,direccion,celular,_id})
  }
+const perfil =(req,res)=>{
+	const {token,confirmEmail,createdAt,updatedAt,__v,...datosPerfil} = req.veterinarioBDD
+    res.status(200).json(datosPerfil)
+}
 
 export {
     registro,
@@ -87,5 +94,6 @@ export {
     recuperarPassword,
     comprobarTokenPasword,
     crearNuevoPassword,
-    login
+    login,
+    perfil
 }

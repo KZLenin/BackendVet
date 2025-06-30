@@ -51,9 +51,26 @@ const sendMailToRecoveryPassword = async(userMail,token)=>{
     console.log("Mensaje enviado satisfactoriamente: ", info.messageId);
 }
 
+const sendMailToOwner = async(userMail,password)=>{
+    let info = await transporter.sendMail({
+    from: 'admin@vet.com',
+    to: userMail,
+    subject: "Correo de bienvenida - Propietario de la mascota",
+    html: `
+    <h1>SmartVET - 🐶 😺</h1>
+    <hr>
+    <p>Contraseña de acceso: ${password}</p>
+    <a href=${process.env.URL_BACKEND}login>Clic para iniciar sesión</a>
+    <hr>
+    <footer>El equipo de SmartVET te da la más cordial bienvenida.</footer>
+    `
+    });
+    console.log("Mensaje enviado satisfactoriamente: ", info.messageId);
+}
 
 
 export {
     sendMailToRegister,
     sendMailToRecoveryPassword,
+    sendMailToOwner
 }

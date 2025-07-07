@@ -17,6 +17,10 @@ app.use(cors())
 
 //Middleware
 app.use(express.json())
+app.use(fileUpload({
+    useTempFiles : true,
+    tempFileDir : './uploads'
+}))
 
 //Rutas
 app.get('/',(req,res)=>{
@@ -35,9 +39,6 @@ cloudinary.config({
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET
 })
-app.use(fileUpload({
-    useTempFiles : true,
-    tempFileDir : './uploads'
-}))
+
 
 export default app

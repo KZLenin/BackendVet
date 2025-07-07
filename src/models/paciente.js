@@ -98,4 +98,4 @@ pacienteSchema.methods.matchPassword = async function(password){
     return bcrypt.compare(password, this.passwordPropietario)
 }
 
-export default model('Paciente',pacienteSchema)
+export default mongoose.models.Paciente || model('Paciente', pacienteSchema);

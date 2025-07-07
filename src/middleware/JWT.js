@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken"
 import veterinario from "../models/veterinario.js"
-import Paciente from "../models/paciente.js"
+import Paciente from "../models/Paciente.js"
 
 const crearTokenJWT = (id, rol) => {
     return jwt.sign({id,rol}, process.env.JWT_SECRET,{expiresIn:"1d"})

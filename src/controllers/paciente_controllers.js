@@ -3,7 +3,7 @@ import { sendMailToOwner } from "../config/nodemailer.js"
 import { v2 as cloudinary } from 'cloudinary'
 import fs from "fs-extra"
 import mongoose from 'mongoose'
-
+import { crearTokenJWT } from "../middleware/JWT.js"
 
 const registrarPaciente = async (req, res) => {
     try {
@@ -25,7 +25,7 @@ const registrarPaciente = async (req, res) => {
 
         const nuevoPaciente = new Paciente({
             ...req.body,
-            passwordPropietario: await Paciente.prototype.encrypPassword(password),
+            passwordPropietario: await Paciente.prototype.encrypPassword("VET"+password),
             veterinario: req.veterinarioBDD._id
         });
 
@@ -90,19 +90,73 @@ const eliminarPaciente = async (req,res) => {
     const {id} = req.params;
 
     // Validaciones
-    if (Object.values(req.body).includes("")) return res.status(400).json({msg:"Lo sentimos, debes llenar todos los campos"}); [1]
-    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(404).json({msg:`Lo sentimos, no existe el paciente ${id}`}); [1]
+    if (Object.values(req.body).includes("")) return res.status(400).json({msg:"Lo sentimos, debes llenar todos los campos"}); 
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(404).json({msg:`Lo sentimos, no existe el paciente ${id}`}); 
 
     // Lógica del negocio: Actualizar la fecha de salida de la mascota
-    const {salidaMascota} = req.body; [1]
-    await Paciente.findByIdAndUpdate(req.params.id, {salidaMascota: salidaMascota}); [1]
+    const {salidaMascota} = req.body; 
+    await Paciente.findByIdAndUpdate(req.params.id, {salidaMascota: salidaMascota}); 
 
     // Responder
-    res.status(200).json({msg:"Fecha de salida de la mascota registrada exitosamente"}); [1]
+    res.status(200).json({msg:"Fecha de salida de la mascota registrada exitosamente"}); 
 }
+const actualizarPaciente = async(req,res)=>{
+    const {id} = req.params
+    if (Object.values(req.body).includes("")) return res.status(400).json({msg:"Lo sentimos, debes llenar todos los campos"})
+    if( !mongoose.Types.ObjectId.isValid(id) ) return res.status(404).json({msg:`Lo sentimos, no existe el veterinario ${id}`})
+    if (req.files?.imagen) {
+        const paciente = await Paciente.findById(id)
+        if (paciente.avatarMascotaID) {
+            await cloudinary.uploader.destroy(paciente.avatarMascotaID);
+        }
+        const cloudiResponse = await cloudinary.uploader.upload(req.files.imagen.tempFilePath, { folder: 'Pacientes' });
+        req.body.avatarMascota = cloudiResponse.secure_url;
+        req.body.avatarMascotaID = cloudiResponse.public_id;
+        await fs.unlink(req.files.imagen.tempFilePath);
+    }
+    await Paciente.findByIdAndUpdate(id, req.body, { new: true })
+    res.status(200).json({msg:"Actualización exitosa del paciente"})
+}
+
+const loginPropietario = async(req,res)=>{
+    console.log(loginPropietario)
+    const {email:emailPropietario,password:passwordPropietario} = req.body
+    if (Object.values(req.body).includes("")) return res.status(404).json({msg:"Lo sentimos, debes llenar todos los campos"})
+    const pacienteBDD = await Paciente.findOne({emailPropietario})
+    if(!pacienteBDD) return res.status(404).json({msg:"Lo sentimos, el usuario no se encuentra registrado"})
+    const verificarPassword = await pacienteBDD.matchPassword(passwordPropietario)
+    if(!verificarPassword) return res.status(404).json({msg:"Lo sentimos, el password no es el correcto"})
+    const token = crearTokenJWT(pacienteBDD._id,pacienteBDD.rol)
+	const {_id,rol} = pacienteBDD
+    res.status(200).json({
+        token,
+        rol,
+        _id
+    })
+}
+
+const perfilPropietario = (req, res) => {
+    
+    const camposAEliminar = [
+        "fechaIngresoMascota", "sintomasMascota", "salidaMascota",
+        "estadoMascota", "veterinario", "tipoMascota",
+        "fechaNacimientoMascota", "passwordPropietario", 
+        "avatarMascota", "avatarMascotaIA","avatarMascotaID", "createdAt", "updatedAt", "__v"
+    ]
+
+    camposAEliminar.forEach(campo => delete req.pacienteBDD[campo])
+
+    res.status(200).json(req.pacienteBDD)
+}
+
+
 
 export{
     registrarPaciente,
     listarPacientes,
-    detallePaciente
+    detallePaciente,
+    eliminarPaciente,
+    actualizarPaciente,
+    loginPropietario,
+    perfilPropietario
 }
